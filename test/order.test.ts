@@ -32,7 +32,6 @@ describe("Order API Integration Tests", () => {
   // Setup before all tests
   beforeAll(async () => {
     server = app.listen(PORT);
-    console.log(`Test server running on port ${PORT}`);
   });
 
   // User tests
@@ -40,7 +39,7 @@ describe("Order API Integration Tests", () => {
     it("should create a new user", async () => {
       const username = generateRandomString();
       const email = `${username}@example.com`;
-      
+
       const response = await fetch(`${BASE_URL}/user/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,22 +54,22 @@ describe("Order API Integration Tests", () => {
           salary: 100000,
         }),
       });
-      
+
       const data = await response.json();
       expect(response.status).toBe(200);
       expect(data).toBeDefined();
-      
+
       // Verify user was created
       const userResponse = await fetch(`${BASE_URL}/user/getUserByUsernameForTest/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: data.username }),
       });
-      
+
       const userData = await userResponse.json();
       expect(userResponse.status).toBe(200);
       expect(userData).toMatchObject(data);
-      
+
       // Store for later tests
       testData.user = userData;
     });
@@ -80,7 +79,7 @@ describe("Order API Integration Tests", () => {
   describe("Product Category Management", () => {
     it("should create a product category", async () => {
       const categoryName = `Category ${generateRandomString()}`;
-      
+
       const response = await fetch(`${BASE_URL}/product-category/createProductCategory`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -89,14 +88,14 @@ describe("Order API Integration Tests", () => {
           description: `${categoryName} description`,
         }),
       });
-      
+
       const data = await response.json();
       expect(response.status).toBe(200);
       expect(data).toMatchObject({
         name: categoryName,
         description: `${categoryName} description`,
       });
-      
+
       // Store for later tests
       testData.productCategory = data;
     });
@@ -108,10 +107,10 @@ describe("Order API Integration Tests", () => {
       if (!testData.productCategory) {
         throw new Error("Product category not created in previous test");
       }
-      
+
       const productName = `Product ${generateRandomString()}`;
       const price = Math.floor(Math.random() * 100) + 1;
-      
+
       const response = await fetch(`${BASE_URL}/product/createProduct`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,7 +123,7 @@ describe("Order API Integration Tests", () => {
           imageurl: "https://example.com/photo.jpg",
         }),
       });
-      
+
       const data = await response.json();
       expect(response.status).toBe(200);
       expect(data).toMatchObject({
@@ -134,7 +133,7 @@ describe("Order API Integration Tests", () => {
         description: `${productName} description`,
         product_category_id: testData.productCategory.id,
       });
-      
+
       // Store for later tests
       testData.product = data;
     });
@@ -146,7 +145,7 @@ describe("Order API Integration Tests", () => {
       if (!testData.user || !testData.product) {
         throw new Error("User or product not created in previous tests");
       }
-      
+
       const response = await fetch(`${BASE_URL}/order/createOrder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -158,7 +157,7 @@ describe("Order API Integration Tests", () => {
           session_id: Math.random().toString(36).substring(2, 15),
         }),
       });
-      
+
       const data = await response.json();
       expect(response.status).toBe(200);
       expect(data).toMatchObject({
@@ -167,7 +166,7 @@ describe("Order API Integration Tests", () => {
         quantity: 1,
         total_price: testData.product.price,
       });
-      
+
       // Store for later tests
       testData.order = data;
     });
@@ -175,7 +174,7 @@ describe("Order API Integration Tests", () => {
     it("should get all orders", async () => {
       const response = await fetch(`${BASE_URL}/order/getAll`);
       const data = await response.json();
-      
+
       expect(response.status).toBe(200);
       expect(Array.isArray(data)).toBe(true);
       // Should contain at least our test order
@@ -186,10 +185,10 @@ describe("Order API Integration Tests", () => {
       if (!testData.order) {
         throw new Error("Order not created in previous test");
       }
-      
+
       const response = await fetch(`${BASE_URL}/order/getById/${testData.order.id}`);
       const data = await response.json();
-      
+
       expect(response.status).toBe(200);
       expect(data).toMatchObject({ id: testData.order.id });
     });
@@ -197,7 +196,7 @@ describe("Order API Integration Tests", () => {
     it("should handle non-existent order by id", async () => {
       const response = await fetch(`${BASE_URL}/order/getById/0`);
       const data = await response.json();
-      
+
       expect(response.status).toBe(400);
       expect(data.error).toBe("Invalid order ID");
     });
@@ -206,14 +205,14 @@ describe("Order API Integration Tests", () => {
       if (!testData.user) {
         throw new Error("User not created in previous tests");
       }
-      
+
       const response = await fetch(`${BASE_URL}/order/getByUserId/${testData.user.user_id}`);
       const data = await response.json();
-      
+
       expect(response.status).toBe(200);
       expect(Array.isArray(data)).toBe(true);
       expect(data.length).toBeGreaterThanOrEqual(0);
-      
+
       // Check that at least one order belongs to our test user
       const userOrders = data.filter((order: { user_id: string; }) => order.user_id === testData.user?.user_id);
       expect(userOrders.length).toBeGreaterThanOrEqual(0);
@@ -223,7 +222,7 @@ describe("Order API Integration Tests", () => {
       const nonExistentUserId = "invalid-user-id";
       const response = await fetch(`${BASE_URL}/order/getByUserId/${nonExistentUserId}`);
       const data = await response.json();
-      
+
       expect(response.status).toBe(404);
       expect(data.error).toBe("No orders found for this user");
     });
@@ -232,10 +231,10 @@ describe("Order API Integration Tests", () => {
       if (!testData.order || !testData.product) {
         throw new Error("Order or product not created in previous tests");
       }
-      
+
       const newQuantity = Math.floor(Math.random() * 5) + 2; // Random quantity between 2 and 6
       const newPrice = testData.product.price * newQuantity;
-      
+
       const response = await fetch(`${BASE_URL}/order/updateOrder`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -248,7 +247,7 @@ describe("Order API Integration Tests", () => {
           },
         }),
       });
-      
+
       const data = await response.json();
       expect(response.status).toBe(200);
       expect(data).toMatchObject({
@@ -256,7 +255,7 @@ describe("Order API Integration Tests", () => {
         quantity: newQuantity,
         total_price: newPrice,
       });
-      
+
       // Update our test data
       testData.order = { ...testData.order, ...data };
     });
@@ -265,12 +264,12 @@ describe("Order API Integration Tests", () => {
       if (!testData.product) {
         throw new Error("Product not created in previous tests");
       }
-      
+
       const response = await fetch(`${BASE_URL}/order/updateOrder`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          id: 0, 
+        body: JSON.stringify({
+          id: 0,
           order: {
             product_id: testData.product.id,
             quantity: 1,
@@ -278,7 +277,7 @@ describe("Order API Integration Tests", () => {
           }
         }),
       });
-      
+
       const data = await response.json();
       expect(response.status).toBe(400);
       expect(data.error).toBe("Invalid order ID");
@@ -295,27 +294,24 @@ describe("Order API Integration Tests", () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: testData.order.id }),
         });
-        console.log(`Test order ${testData.order.id} deleted`);
       }
-      
+
       if (testData.product) {
         await fetch(`${BASE_URL}/product/deleteProduct`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: testData.product.id }),
         });
-        console.log(`Test product ${testData.product.id} deleted`);
       }
-      
+
       if (testData.productCategory) {
         await fetch(`${BASE_URL}/product-category/deleteProductCategory`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: testData.productCategory.id }),
         });
-        console.log(`Test product category ${testData.productCategory.id} deleted`);
       }
-      
+
       if (testData.user) {
         await fetch(`${BASE_URL}/user/delete`, {
           method: "DELETE",
